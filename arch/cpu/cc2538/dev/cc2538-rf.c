@@ -600,6 +600,10 @@ prepare(const void *payload, unsigned short payload_len)
 {
   uint8_t i;
 
+  if(payload_len > NETSTACK_RADIO_MAX_PAYLOAD_LEN) {
+    return RADIO_TX_ERR;
+  }
+
   LOG_INFO("Prepare 0x%02x bytes\n", payload_len + CHECKSUM_LEN);
 
   /*
@@ -660,6 +664,10 @@ transmit(unsigned short transmit_len)
   uint8_t was_off = 0;
 
   LOG_INFO("Transmit\n");
+
+  if(transmit_len > NETSTACK_RADIO_MAX_PAYLOAD_LEN) {
+    return RADIO_TX_ERR;
+  }
 
   if(!(rf_flags & RX_ACTIVE)) {
     t0 = RTIMER_NOW();
@@ -1031,6 +1039,7 @@ get_object(radio_param_t param, void *dest, size_t size)
     if(size != sizeof(uint16_t *) || !dest) {
       return RADIO_RESULT_INVALID_VALUE;
     }
+    /* Assigned value: a pointer to the TSCH timing in usec */
     *(const uint16_t **)dest = tsch_timeslot_timing_us_10000;
     return RADIO_RESULT_OK;
   }

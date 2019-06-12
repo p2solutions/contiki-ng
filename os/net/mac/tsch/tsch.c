@@ -535,7 +535,7 @@ tsch_disassociate(void)
 {
   if(tsch_is_associated == 1) {
     tsch_is_associated = 0;
-    process_post(&tsch_process, PROCESS_EVENT_POLL, NULL);
+    process_poll(&tsch_process);
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -550,7 +550,7 @@ tsch_associate(const struct input_packet *input_eb, rtimer_clock_t timestamp)
 
   if(input_eb == NULL || tsch_packet_parse_eb(input_eb->payload, input_eb->len,
                                               &frame, &ies, &hdrlen, 0) == 0) {
-    LOG_ERR("! failed to parse EB (len %u)\n", input_eb->len);
+    LOG_DBG("! failed to parse EB (len %u)\n", input_eb->len);
     return 0;
   }
 
@@ -769,21 +769,23 @@ PT_THREAD(tsch_scan(struct pt *pt))
       /* Read packet */
       input_eb.len = NETSTACK_RADIO.read(input_eb.payload, TSCH_PACKET_MAX_LEN);
 
-      /* Save packet timestamp */
-      NETSTACK_RADIO.get_object(RADIO_PARAM_LAST_PACKET_TIMESTAMP, &t0, sizeof(rtimer_clock_t));
-      t1 = RTIMER_NOW();
+      if(input_eb.len > 0) {
+        /* Save packet timestamp */
+        NETSTACK_RADIO.get_object(RADIO_PARAM_LAST_PACKET_TIMESTAMP, &t0, sizeof(rtimer_clock_t));
+        t1 = RTIMER_NOW();
 
-      /* Parse EB and attempt to associate */
-      LOG_INFO("scan: received packet (%u bytes) on channel %u\n", input_eb.len, current_channel);
+        /* Parse EB and attempt to associate */
+        LOG_INFO("scan: received packet (%u bytes) on channel %u\n", input_eb.len, current_channel);
 
-      /* Sanity-check the timestamp */
-      if(ABS(RTIMER_CLOCK_DIFF(t0, t1)) < tsch_timing[tsch_ts_timeslot_length]) {
-        tsch_associate(&input_eb, t0);
-      } else {
-        LOG_WARN("scan: dropping packet, timestamp too far from current time %u %u\n",
-          (unsigned)t0,
-          (unsigned)t1
-      );
+        /* Sanity-check the timestamp */
+        if(ABS(RTIMER_CLOCK_DIFF(t0, t1)) < 2ul * RTIMER_SECOND) {
+          tsch_associate(&input_eb, t0);
+        } else {
+          LOG_WARN("scan: dropping packet, timestamp too far from current time %u %u\n",
+            (unsigned)t0,
+            (unsigned)t1
+        );
+        }
       }
     }
 
@@ -861,7 +863,12 @@ PROCESS_THREAD(tsch_send_eb_process, ev, data)
   while(1) {
     unsigned long delay;
 
-    if(tsch_is_associated && tsch_current_eb_period > 0) {
+    if(tsch_is_associated && tsch_current_eb_period > 0
+#ifdef TSCH_RPL_CHECK_DODAG_JOINED
+      /* Implementation section 6.3 of RFC 8180 */
+      && TSCH_RPL_CHECK_DODAG_JOINED()
+#endif /* TSCH_RPL_CHECK_DODAG_JOINED */
+        ) {
       /* Enqueue EB only if there isn't already one in queue */
       if(tsch_queue_packet_count(&tsch_eb_address) == 0) {
         uint8_t hdr_len = 0;
