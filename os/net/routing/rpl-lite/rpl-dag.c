@@ -65,7 +65,15 @@ rpl_instance_t curr_instance;
 
 #ifdef RPL_VALIDATE_DIO_FUNC
 int RPL_VALIDATE_DIO_FUNC(rpl_dio_t *dio);
-#endif /* RPL_PROBING_SELECT_FUNC */
+#endif /* RPL_VALIDATE_DIO_FUNC */
+
+#ifdef RPL_PROCESS_DIS_ALLOWED_FUNC
+int RPL_PROCESS_DIS_ALLOWED_FUNC();
+#endif /* RPL_PROCESS_DIS_ALLOWED_FUNC */
+
+#ifdef RPL_ADVERTISEMENT_ALLOWED_FUNC
+int RPL_ADVERTISEMENT_ALLOWED_FUNC();
+#endif /* RPL_PROCESS_DIS_ALLOWED_FUNC */
 
 /*---------------------------------------------------------------------------*/
 const char *
@@ -252,6 +260,13 @@ rpl_local_repair(const char *str)
 int
 rpl_dag_ready_to_advertise(void)
 {
+#ifdef RPL_ADVERTISEMENT_ALLOWED_FUNC
+  if(!RPL_ADVERTISEMENT_ALLOWED_FUNC()) {
+    LOG_WARN("Advertisement not allowed\n");
+    return 0;
+  }
+#endif
+
   if(curr_instance.mop == RPL_MOP_NO_DOWNWARD_ROUTES) {
     return curr_instance.used && curr_instance.dag.state >= DAG_INITIALIZED;
   } else {
@@ -612,6 +627,12 @@ rpl_process_dio(uip_ipaddr_t *from, rpl_dio_t *dio)
 void
 rpl_process_dis(uip_ipaddr_t *from, int is_multicast)
 {
+#ifdef RPL_PROCESS_DIS_ALLOWED_FUNC
+  if(!RPL_PROCESS_DIS_ALLOWED_FUNC()) {
+    LOG_WARN("DIS processing not allowed\n");
+    return;
+  }
+#endif
   if(is_multicast) {
     rpl_timers_dio_reset("Multicast DIS");
   } else {
