@@ -811,7 +811,6 @@ release_data_entry(void)
 {
   rfc_dataEntryGeneral_t *entry = (rfc_dataEntryGeneral_t *)rx_read_entry;
   uint8_t *data_ptr = &entry->data;
-  int_master_status_t interrupt_status;
 
   /* Clear the length field (2 bytes) */
   data_ptr[0] = 0;
@@ -821,14 +820,24 @@ release_data_entry(void)
   entry->status = DATA_ENTRY_STATUS_PENDING;
   rx_read_entry = entry->pNextEntry;
 
+}
+/*---------------------------------------------------------------------------*/
+static void
+check_rx_is_full(void)
+{
+  int_master_status_t interrupt_status;
   interrupt_status = critical_enter();
   if(rf_core_rx_is_full) {
     rf_core_rx_is_full = false;
     PRINTF("RXQ was full, re-enabling radio!\n");
-    rx_on_prop();
+    /*
+     * We have to turn the radio off and on again
+     * Just calling rx_on_prop gives an error with CMDSTA=0x00000c23
+     */
+    off();
+    on();
   }
   critical_exit(interrupt_status);
-
 }
 /*---------------------------------------------------------------------------*/
 static int
@@ -851,6 +860,7 @@ read_frame(void *buf, unsigned short buf_len)
 
   if(entry->status != DATA_ENTRY_STATUS_FINISHED) {
     /* No available data */
+    check_rx_is_full();
     return 0;
   }
 
@@ -866,6 +876,7 @@ read_frame(void *buf, unsigned short buf_len)
     PRINTF("RF: too short!");
 
     release_data_entry();
+    check_rx_is_full();
     return 0;
   }
 
@@ -876,6 +887,7 @@ read_frame(void *buf, unsigned short buf_len)
     PRINTF("RF: too long\n");
 
     release_data_entry();
+    check_rx_is_full();
     return 0;
   }
 
@@ -899,6 +911,7 @@ read_frame(void *buf, unsigned short buf_len)
   }
 
   release_data_entry();
+  check_rx_is_full();
 
   return len;
 }
