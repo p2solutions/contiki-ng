@@ -513,6 +513,12 @@ rx_on_prop(void)
 {
   int ret;
 
+  if(!rf_is_on()) {
+    PRINTF("rx_on_prop: RF is off. PD=%u, RX=0x%04x\n",
+           rf_core_is_accessible(), smartrf_settings_cmd_prop_rx_adv.status);
+    return RF_CORE_CMD_OK;
+  }
+
   if(rx_is_on()) {
     PRINTF("rx_on_prop: We were on. PD=%u, RX=0x%04x\n",
            rf_core_is_accessible(), smartrf_settings_cmd_prop_rx_adv.status);
@@ -1143,6 +1149,12 @@ off(void)
 {
   int i;
   rfc_dataEntry_t *entry;
+
+  if(!rf_is_on()) {
+    PRINTF("off: We were off. PD=%u, RX=0x%04x \n", rf_core_is_accessible(),
+           smartrf_settings_cmd_prop_rx_adv.status);
+    return RF_CORE_CMD_OK;
+  }
 
   /*
    * If we are in the middle of a BLE operation, we got called by ContikiMAC
