@@ -130,6 +130,8 @@ static volatile uint8_t is_receiving_packet;
 static int on(void);
 static int off(void);
 
+static uint8_t rf_status = 0;
+
 static rfc_propRxOutput_t rx_stats;
 /*---------------------------------------------------------------------------*/
 /* Defines and variables related to the .15.4g PHY HDR */
@@ -264,13 +266,23 @@ volatile static uint8_t *rx_read_entry;
 static uint8_t tx_buf[TX_BUF_HDR_LEN + TX_BUF_PAYLOAD_LEN] CC_ALIGN(4);
 /*---------------------------------------------------------------------------*/
 static uint8_t
-rf_is_on(void)
+rx_is_on(void)
 {
   if(!rf_core_is_accessible()) {
     return 0;
   }
 
   return smartrf_settings_cmd_prop_rx_adv.status == RF_CORE_RADIO_OP_STATUS_ACTIVE;
+}
+/*---------------------------------------------------------------------------*/
+static uint8_t
+rf_is_on(void)
+{
+  if(!rf_core_is_accessible()) {
+    return 0;
+  }
+
+  return rf_status;
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
@@ -502,7 +514,7 @@ rx_on_prop(void)
 {
   int ret;
 
-  if(rf_is_on()) {
+  if(rx_is_on()) {
     PRINTF("rx_on_prop: We were on. PD=%u, RX=0x%04x\n",
            rf_core_is_accessible(), smartrf_settings_cmd_prop_rx_adv.status);
     return RF_CORE_CMD_OK;
@@ -525,7 +537,7 @@ rx_off_prop(void)
   int ret;
 
   /* If we are off, do nothing */
-  if(!rf_is_on()) {
+  if(!rx_is_on()) {
     return RF_CORE_CMD_OK;
   }
 
@@ -538,7 +550,7 @@ rx_off_prop(void)
     /* Continue nonetheless */
   }
 
-  RTIMER_BUSYWAIT_UNTIL(!rf_is_on(), RF_CORE_TURN_OFF_TIMEOUT);
+  RTIMER_BUSYWAIT_UNTIL(!rx_is_on(), RF_CORE_TURN_OFF_TIMEOUT);
 
   if(smartrf_settings_cmd_prop_rx_adv.status == PROP_DONE_STOPPED ||
      smartrf_settings_cmd_prop_rx_adv.status == PROP_DONE_ABORT) {
@@ -820,24 +832,10 @@ release_data_entry(void)
   entry->status = DATA_ENTRY_STATUS_PENDING;
   rx_read_entry = entry->pNextEntry;
 
-}
-/*---------------------------------------------------------------------------*/
-static void
-check_rx_is_full(void)
-{
-  int_master_status_t interrupt_status;
-  interrupt_status = critical_enter();
-  if(rf_core_rx_is_full) {
-    rf_core_rx_is_full = false;
-    PRINTF("RXQ was full, re-enabling radio!\n");
-    /*
-     * We have to turn the radio off and on again
-     * Just calling rx_on_prop gives an error with CMDSTA=0x00000c23
-     */
-    off();
-    on();
+  if(!rx_is_on()) {
+    PRINTF("RX was off, re-enabling rx!\n");
+    rx_on_prop();
   }
-  critical_exit(interrupt_status);
 }
 /*---------------------------------------------------------------------------*/
 static int
@@ -860,7 +858,6 @@ read_frame(void *buf, unsigned short buf_len)
 
   if(entry->status != DATA_ENTRY_STATUS_FINISHED) {
     /* No available data */
-    check_rx_is_full();
     return 0;
   }
 
@@ -876,7 +873,6 @@ read_frame(void *buf, unsigned short buf_len)
     PRINTF("RF: too short!");
 
     release_data_entry();
-    check_rx_is_full();
     return 0;
   }
 
@@ -887,7 +883,6 @@ read_frame(void *buf, unsigned short buf_len)
     PRINTF("RF: too long\n");
 
     release_data_entry();
-    check_rx_is_full();
     return 0;
   }
 
@@ -911,7 +906,6 @@ read_frame(void *buf, unsigned short buf_len)
   }
 
   release_data_entry();
-  check_rx_is_full();
 
   return len;
 }
@@ -1138,7 +1132,11 @@ on(void)
     return RF_CORE_CMD_ERROR;
   }
 
-  return rx_on_prop();
+  if (rx_on_prop() == RF_CORE_CMD_OK) {
+    rf_status = 1;
+    return RF_CORE_CMD_OK;
+  }
+  return RF_CORE_CMD_ERROR;
 }
 /*---------------------------------------------------------------------------*/
 static int
@@ -1178,6 +1176,8 @@ off(void)
        entry->status = DATA_ENTRY_STATUS_PENDING;
     }
   }
+
+  rf_status = 0;
 
   return RF_CORE_CMD_OK;
 }
