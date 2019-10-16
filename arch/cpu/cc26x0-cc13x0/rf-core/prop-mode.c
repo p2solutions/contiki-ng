@@ -45,7 +45,6 @@
 #include "net/netstack.h"
 #include "sys/energest.h"
 #include "sys/clock.h"
-#include "sys/critical.h"
 #include "sys/rtimer.h"
 #include "sys/cc.h"
 #include "lpm.h"
