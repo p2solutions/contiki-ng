@@ -198,6 +198,19 @@
 #define RPL_VALIDATE_DIO_FUNC RPL_CONF_VALIDATE_DIO_FUNC
 #endif
 
+/*
+ * Function used to determine if this node should process dis messages
+ */
+#ifdef RPL_CONF_PROCESS_DIS_ALLOWED_FUNC
+#define RPL_PROCESS_DIS_ALLOWED_FUNC RPL_CONF_PROCESS_DIS_ALLOWED_FUNC
+#endif
+/*
+ * Function used to determine if this node should process dis messages
+ */
+#ifdef RPL_CONF_ADVERTISEMENT_ALLOWED_FUNC
+#define RPL_ADVERTISEMENT_ALLOWED_FUNC RPL_CONF_ADVERTISEMENT_ALLOWED_FUNC
+#endif
+
 /******************************************************************************/
 /********************************** Timing ************************************/
 /******************************************************************************/

@@ -100,26 +100,26 @@
 #define ND6_OPT_RDNSS_BUF(opt)             ((uip_nd6_opt_dns *)ND6_OPT(opt))
 /** @} */
 
-#if UIP_ND6_SEND_NS || UIP_ND6_SEND_NA || UIP_ND6_SEND_RA || !UIP_CONF_ROUTER
+#if UIP_ND6_SEND_NS || UIP_ND6_SEND_NA || UIP_ND6_SEND_RA || (!UIP_CONF_ROUTER && UIP_ND6_SEND_RS)
 static uint8_t nd6_opt_offset;                     /** Offset from the end of the icmpv6 header to the option in uip_buf*/
 static uint8_t *nd6_opt_llao;   /**  Pointer to llao option in uip_buf */
 static uip_ds6_nbr_t *nbr; /**  Pointer to a nbr cache entry*/
 static uip_ds6_addr_t *addr; /**  Pointer to an interface address */
-#endif /* UIP_ND6_SEND_NS || UIP_ND6_SEND_NA || UIP_ND6_SEND_RA || !UIP_CONF_ROUTER */
+#endif /* UIP_ND6_SEND_NS || UIP_ND6_SEND_NA || UIP_ND6_SEND_RA || (!UIP_CONF_ROUTER && UIP_ND6_SEND_RS) */
 
-#if UIP_ND6_SEND_NS || UIP_ND6_SEND_RA || !UIP_CONF_ROUTER
+#if UIP_ND6_SEND_NS || UIP_ND6_SEND_RA || (!UIP_CONF_ROUTER && UIP_ND6_SEND_RS)
 static uip_ds6_defrt_t *defrt; /**  Pointer to a router list entry */
-#endif /* UIP_ND6_SEND_NS || UIP_ND6_SEND_RA || !UIP_CONF_ROUTER */
+#endif /* UIP_ND6_SEND_NS || UIP_ND6_SEND_RA || (!UIP_CONF_ROUTER && UIP_ND6_SEND_RS) */
 
-#if !UIP_CONF_ROUTER            // TBD see if we move it to ra_input
+#if (!UIP_CONF_ROUTER && UIP_ND6_SEND_RS)       // TBD see if we move it to ra_input
 static uip_nd6_opt_prefix_info *nd6_opt_prefix_info; /**  Pointer to prefix information option in uip_buf */
 static uip_ipaddr_t ipaddr;
 #endif
-#if (!UIP_CONF_ROUTER || UIP_ND6_SEND_RA)
+#if ((!UIP_CONF_ROUTER && UIP_ND6_SEND_RS) || UIP_ND6_SEND_RA)
 static uip_ds6_prefix_t *prefix; /**  Pointer to a prefix list entry */
 #endif
 
-#if UIP_ND6_SEND_NA || UIP_ND6_SEND_RA || !UIP_CONF_ROUTER
+#if UIP_ND6_SEND_NA || UIP_ND6_SEND_RA || (!UIP_CONF_ROUTER && UIP_ND6_SEND_RS)
 /*------------------------------------------------------------------*/
 /* Copy link-layer address from LLAO option to a word-aligned uip_lladdr_t */
 static int
@@ -130,7 +130,7 @@ extract_lladdr_from_llao_aligned(uip_lladdr_t *dest) {
   }
   return 0;
 }
-#endif /* UIP_ND6_SEND_NA || UIP_ND6_SEND_RA || !UIP_CONF_ROUTER */
+#endif /* UIP_ND6_SEND_NA || UIP_ND6_SEND_RA || (!UIP_CONF_ROUTER && UIP_ND6_SEND_RS) */
 /*------------------------------------------------------------------*/
 #if UIP_ND6_SEND_NA /* UIP_ND6_SEND_NA */
 /* create a llao */
@@ -801,7 +801,7 @@ uip_nd6_ra_output(uip_ipaddr_t * dest)
 #endif /* UIP_ND6_SEND_RA */
 #endif /* UIP_CONF_ROUTER */
 
-#if !UIP_CONF_ROUTER
+#if !UIP_CONF_ROUTER && UIP_ND6_SEND_RS
 /*---------------------------------------------------------------------------*/
 void
 uip_nd6_rs_output(void)
@@ -1096,7 +1096,7 @@ UIP_ICMP6_HANDLER(rs_input_handler, ICMP6_RS, UIP_ICMP6_HANDLER_CODE_ANY,
                   rs_input);
 #endif
 
-#if !UIP_CONF_ROUTER
+#if !UIP_CONF_ROUTER && UIP_ND6_SEND_RS
 UIP_ICMP6_HANDLER(ra_input_handler, ICMP6_RA, UIP_ICMP6_HANDLER_CODE_ANY,
                   ra_input);
 #endif
@@ -1120,8 +1120,8 @@ uip_nd6_init()
   uip_icmp6_register_input_handler(&rs_input_handler);
 #endif
 
-#if !UIP_CONF_ROUTER
-  /* Only process RAs if we are not a router */
+#if !UIP_CONF_ROUTER && UIP_ND6_SEND_RS
+  /* Only process RAs if we are not a router and happy to send out RSs */
   uip_icmp6_register_input_handler(&ra_input_handler);
 #endif
 }

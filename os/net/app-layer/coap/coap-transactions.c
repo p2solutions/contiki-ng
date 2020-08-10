@@ -114,7 +114,10 @@ coap_send_transaction(coap_transaction_t *t)
         LOG_DBG("Initial interval %lu msec\n",
                 (unsigned long)t->retrans_interval);
       } else {
-        t->retrans_interval <<= 1;  /* double */
+        //t->retrans_interval <<= 1;  /* double */
+        t->retrans_interval = t->retrans_counter + 1 *
+          (COAP_RESPONSE_TIMEOUT_TICKS + (rand() %
+                                         COAP_RESPONSE_TIMEOUT_BACKOFF_MASK));
         LOG_DBG("Doubled (%u) interval %lu s\n", t->retrans_counter,
                 (unsigned long)(t->retrans_interval / 1000));
       }

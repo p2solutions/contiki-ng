@@ -312,8 +312,12 @@ void
 coap_endpoint_disconnect(coap_endpoint_t *ep)
 {
 #ifdef WITH_DTLS
+  dtls_peer_t *peer;
   if(ep && ep->secure && dtls_context) {
-    dtls_close(dtls_context, ep);
+    peer = dtls_get_peer(dtls_context, ep);
+    if(peer != NULL) {
+      dtls_reset_peer(dtls_context, peer);
+    }
   }
 #endif /* WITH_DTLS */
 }
