@@ -51,6 +51,7 @@
 #define LOG_MODULE "BR"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
+void send_mac(void);
 void request_prefix(void);
 
 /*---------------------------------------------------------------------------*/
@@ -77,7 +78,6 @@ PROCESS_THREAD(border_router_process, ev, data)
 #endif
 
   LOG_INFO("RPL-Border router started\n");
-
   /* Request prefix until it has been received */
   while(!prefix_set) {
     etimer_set(&et, CLOCK_SECOND);
@@ -85,6 +85,7 @@ PROCESS_THREAD(border_router_process, ev, data)
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
     LOG_INFO("Waiting for prefix\n");
   }
+  send_mac();
 
   NETSTACK_MAC.on();
 
