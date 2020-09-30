@@ -75,13 +75,9 @@ send_mac(void)
   /* mess up uip_buf with a dirty request... */
   uip_buf[0] = '!';
   uip_buf[1] = 'M';
-  // memcpy(&uip_buf[2], linkaddr_node_addr.u8, LINKADDR_SIZE);
-
-  // uip_len = 2 + LINKADDR_SIZE;
 
   char *hexchar = "0123456789abcdef";
   int j;
-  /* this is just a test so far... just to see if it works */
   for(j = 0; j < UIP_LLADDR_LEN; j++) {
     uip_buf[2 + j * 2] = hexchar[uip_lladdr.addr[j] >> 4];
     uip_buf[3 + j * 2] = hexchar[uip_lladdr.addr[j] & 15];
