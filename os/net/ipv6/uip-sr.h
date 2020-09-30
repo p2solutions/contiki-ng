@@ -85,6 +85,19 @@
 
 #define UIP_SR_INFINITE_LIFETIME           0xFFFFFFFF
 
+/*
+ * Function used to notify about a routing link update
+ */
+#ifdef UIP_CONF_NOTIFY_ROUTING_LINK_UPDATE_FUNC
+#define UIP_NOTIFY_ROUTING_LINK_UPDATE_FUNC UIP_CONF_NOTIFY_ROUTING_LINK_UPDATE_FUNC
+#endif
+/*
+ * Function used to notify about a routing link removal
+ */
+#ifdef UIP_CONF_NOTIFY_ROUTING_LINK_REMOVAL_FUNC
+#define UIP_NOTIFY_ROUTING_LINK_REMOVAL_FUNC UIP_CONF_NOTIFY_ROUTING_LINK_REMOVAL_FUNC
+#endif
+
 /********** Data Structures  **********/
 
 /** \brief A node in a source routing graph, stored at the root and representing

@@ -58,6 +58,14 @@ static int num_nodes;
 LIST(nodelist);
 MEMB(nodememb, uip_sr_node_t, UIP_SR_LINK_NUM);
 
+#ifdef UIP_NOTIFY_ROUTING_LINK_UPDATE_FUNC
+void UIP_NOTIFY_ROUTING_LINK_UPDATE_FUNC(const uip_ipaddr_t *child, const uip_ipaddr_t *parent);
+#endif /* UIP_NOTIFY_ROUTING_LINK_UPDATE_FUNC */
+
+#ifdef UIP_NOTIFY_ROUTING_LINK_REMOVAL_FUNC
+void UIP_NOTIFY_ROUTING_LINK_REMOVAL_FUNC(const uip_ipaddr_t *node);
+#endif /* UIP_NOTIFY_ROUTING_LINK_REMOVAL_FUNC */
+
 /*---------------------------------------------------------------------------*/
 int
 uip_sr_num_nodes(void)
@@ -178,6 +186,9 @@ uip_sr_update_node(void *graph, const uip_ipaddr_t *child, const uip_ipaddr_t *p
   LOG_INFO_(", parent ");
   LOG_INFO_6ADDR(parent);
   LOG_INFO_(", lifetime %u, num_nodes %u\n", (unsigned)lifetime, num_nodes);
+  #ifdef UIP_NOTIFY_ROUTING_LINK_UPDATE_FUNC
+    UIP_NOTIFY_ROUTING_LINK_UPDATE_FUNC(child, parent);
+  #endif
 
   return child_node;
 }
@@ -225,6 +236,11 @@ uip_sr_periodic(unsigned seconds)
         LOG_INFO_6ADDR(&node_addr);
         LOG_INFO_("\n");
       }
+      #ifdef UIP_NOTIFY_ROUTING_LINK_REMOVAL_FUNC
+        uip_ipaddr_t node_addr;
+        NETSTACK_ROUTING.get_sr_node_ipaddr(&node_addr, l);
+        UIP_NOTIFY_ROUTING_LINK_REMOVAL_FUNC(node_addr);
+      #endif
       /* No child found, deallocate node */
       list_remove(nodelist, l);
       memb_free(&nodememb, l);
