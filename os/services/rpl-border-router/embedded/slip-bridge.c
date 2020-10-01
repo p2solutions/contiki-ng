@@ -88,23 +88,25 @@ send_mac(void)
 }
 /*---------------------------------------------------------------------------*/
 void routing_link_update(const uip_ipaddr_t *child, const uip_ipaddr_t *parent) {
-  uint8_t buf_len = sizeof(uip_ipaddr_t) * 2 + 3;
+  uint8_t buf_len = sizeof(uip_ipaddr_t) * 2 + 4;
   uint8_t buf[buf_len];
   buf[0] = '!';
   buf[1] = 'L';
   buf[2] = 'U';
-  memcpy(&buf[3], child, sizeof(uip_ipaddr_t));
-  memcpy(&buf[3 + sizeof(uip_ipaddr_t)], parent, sizeof(uip_ipaddr_t));
+  buf[3] = buf_len - 4;
+  memcpy(&buf[4], child, sizeof(uip_ipaddr_t));
+  memcpy(&buf[4 + sizeof(uip_ipaddr_t)], parent, sizeof(uip_ipaddr_t));
   slip_write(buf, buf_len);
 
 }
 void routing_link_removal(const uip_ipaddr_t *node) {
-  uint8_t buf_len = sizeof(uip_ipaddr_t) + 3;
+  uint8_t buf_len = sizeof(uip_ipaddr_t) + 4;
   uint8_t buf[buf_len];
   buf[0] = '!';
   buf[1] = 'L';
   buf[2] = 'R';
-  memcpy(&buf[3], node, sizeof(uip_ipaddr_t));
+  buf[3] = buf_len - 4;
+  memcpy(&buf[4], node, sizeof(uip_ipaddr_t));
   slip_write(buf, buf_len);
 }
 /*---------------------------------------------------------------------------*/
