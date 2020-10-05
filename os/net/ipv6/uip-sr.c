@@ -239,7 +239,7 @@ uip_sr_periodic(unsigned seconds)
       #ifdef UIP_NOTIFY_ROUTING_LINK_REMOVAL_FUNC
         uip_ipaddr_t node_addr;
         NETSTACK_ROUTING.get_sr_node_ipaddr(&node_addr, l);
-        UIP_NOTIFY_ROUTING_LINK_REMOVAL_FUNC(node_addr);
+        UIP_NOTIFY_ROUTING_LINK_REMOVAL_FUNC(&node_addr);
       #endif
       /* No child found, deallocate node */
       list_remove(nodelist, l);

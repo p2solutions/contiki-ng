@@ -51,12 +51,6 @@
 void set_prefix_64(uip_ipaddr_t *);
 
 static uip_ipaddr_t last_sender;
-
-void routing_link_update(const uip_ipaddr_t *child, const uip_ipaddr_t *parent);
-void routing_link_removal(const uip_ipaddr_t *node);
-
-#define UIP_CONF_NOTIFY_ROUTING_LINK_UPDATE_FUNC routing_link_update
-#define UIP_CONF_NOTIFY_ROUTING_LINK_REMOVAL_FUNC routing_link_removal
 /*---------------------------------------------------------------------------*/
 void
 request_prefix(void)
@@ -94,8 +88,16 @@ void routing_link_update(const uip_ipaddr_t *child, const uip_ipaddr_t *parent) 
   buf[1] = 'L';
   buf[2] = 'U';
   buf[3] = buf_len - 4;
-  memcpy(&buf[4], child, sizeof(uip_ipaddr_t));
-  memcpy(&buf[4 + sizeof(uip_ipaddr_t)], parent, sizeof(uip_ipaddr_t));
+  if (child == NULL) {
+    memset(&buf[4], 0, sizeof(uip_ipaddr_t));
+  } else {
+    memcpy(&buf[4], child, sizeof(uip_ipaddr_t));
+  }
+  if (parent == NULL) {
+    memset(&buf[4 + sizeof(uip_ipaddr_t)], 0, sizeof(uip_ipaddr_t));
+  } else {
+    memcpy(&buf[4 + sizeof(uip_ipaddr_t)], parent, sizeof(uip_ipaddr_t));
+  }
   slip_write(buf, buf_len);
 
 }
