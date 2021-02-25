@@ -56,6 +56,9 @@ typedef int (*uart0_input_fxn_t)(unsigned char);
  */
 void uart0_init(void);
 
+void
+uart0_close(void);
+
 /**
  * \brief           Writes data from a memory buffer to the UART interface.
  * \param buf       A pointer to the data buffer.

@@ -101,6 +101,10 @@ uart0_init(void)
 
   initialized = true;
 }
+void
+uart0_close(void) {
+  UART_close(uart_handle);
+}
 /*---------------------------------------------------------------------------*/
 int_fast32_t
 uart0_write(const void *buf, size_t buf_size)
