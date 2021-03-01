@@ -69,14 +69,6 @@ watchdog_init(void)
 {
 #if (WATCHDOG_DISABLE == 0)
   Watchdog_init();
-
-  Watchdog_Params wdt_params;
-  Watchdog_Params_init(&wdt_params);
-
-  wdt_params.resetMode = Watchdog_RESET_ON;
-  wdt_params.debugStallMode = Watchdog_DEBUG_STALL_ON;
-
-  wdt_handle = Watchdog_open(Board_WATCHDOG0, &wdt_params);
 #endif
 }
 /*---------------------------------------------------------------------------*/
@@ -112,6 +104,14 @@ void
 watchdog_start(void)
 {
 #if (WATCHDOG_DISABLE == 0)
+  Watchdog_Params wdt_params;
+  Watchdog_Params_init(&wdt_params);
+
+  wdt_params.resetMode = Watchdog_RESET_ON;
+  wdt_params.debugStallMode = Watchdog_DEBUG_STALL_ON;
+
+  wdt_handle = Watchdog_open(Board_WATCHDOG0, &wdt_params);
+
   watchdog_periodic();
 #endif
 }
@@ -137,6 +137,7 @@ watchdog_stop(void)
 {
 #if (WATCHDOG_DISABLE == 0)
   Watchdog_clear(wdt_handle);
+  Watchdog_close(wdt_handle);
 #endif
 }
 /*---------------------------------------------------------------------------*/
