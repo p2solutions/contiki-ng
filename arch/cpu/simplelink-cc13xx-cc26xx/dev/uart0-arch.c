@@ -101,8 +101,12 @@ uart0_init(void)
 
   initialized = true;
 }
+/*---------------------------------------------------------------------------*/
 void
 uart0_close(void) {
+  initialized = false;
+  curr_input_cb = NULL;
+  UART_readCancel(uart_handle);
   UART_close(uart_handle);
 }
 /*---------------------------------------------------------------------------*/

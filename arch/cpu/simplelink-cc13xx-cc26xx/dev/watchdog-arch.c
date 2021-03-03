@@ -42,6 +42,7 @@
 
 #include <ti/drivers/Watchdog.h>
 #include <ti/drivers/dpl/ClockP.h>
+#include <ti/drivers/dpl/HwiP.h>
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/watchdog.h)
@@ -69,6 +70,14 @@ watchdog_init(void)
 {
 #if (WATCHDOG_DISABLE == 0)
   Watchdog_init();
+
+  Watchdog_Params wdt_params;
+  Watchdog_Params_init(&wdt_params);
+
+  wdt_params.resetMode = Watchdog_RESET_ON;
+  wdt_params.debugStallMode = Watchdog_DEBUG_STALL_ON;
+
+  wdt_handle = Watchdog_open(Board_WATCHDOG0, &wdt_params);
 #endif
 }
 /*---------------------------------------------------------------------------*/
@@ -104,15 +113,25 @@ void
 watchdog_start(void)
 {
 #if (WATCHDOG_DISABLE == 0)
-  Watchdog_Params wdt_params;
-  Watchdog_Params_init(&wdt_params);
-
-  wdt_params.resetMode = Watchdog_RESET_ON;
-  wdt_params.debugStallMode = Watchdog_DEBUG_STALL_ON;
-
-  wdt_handle = Watchdog_open(Board_WATCHDOG0, &wdt_params);
-
   watchdog_periodic();
+
+  unsigned int                   key;
+
+  /* disable preemption while unlocking WatchDog registers */
+  key = HwiP_disable();
+
+  /* unlock the Watchdog configuration registers */
+  WatchdogUnlock();
+
+  /* make sure the Watchdog is unlocked before continuing */
+  while(WatchdogLockState() == WATCHDOG_LOCK_LOCKED)
+  { }
+  WatchdogResetEnable();
+
+  /* lock the Watchdog configuration registers */
+  WatchdogLock();
+
+  HwiP_restore(key);
 #endif
 }
 /*---------------------------------------------------------------------------*/
@@ -136,8 +155,23 @@ void
 watchdog_stop(void)
 {
 #if (WATCHDOG_DISABLE == 0)
-  Watchdog_clear(wdt_handle);
-  Watchdog_close(wdt_handle);
+  unsigned int                   key;
+
+  /* disable preemption while unlocking WatchDog registers */
+  key = HwiP_disable();
+
+  /* unlock the Watchdog configuration registers */
+  WatchdogUnlock();
+
+  /* make sure the Watchdog is unlocked before continuing */
+  while(WatchdogLockState() == WATCHDOG_LOCK_LOCKED)
+  { }
+  WatchdogResetDisable();
+
+  /* lock the Watchdog configuration registers */
+  WatchdogLock();
+
+  HwiP_restore(key);
 #endif
 }
 /*---------------------------------------------------------------------------*/
